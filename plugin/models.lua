@@ -95,40 +95,180 @@ local keydoors = {
 
 local skilldoors = {
 	woodcutting = {
-		vertcount = 4533,
-		zerothvertpos = { 216, 0, 372 },
+		{
+			vertcount = 4533,
+			zerothvertpos = { 216, 0, 372 },
+		},
+		{
+			vertcount = 4533,
+			zerothvertpos = { 208, 420, 32 },
+		},
+		{
+			vertcount = 4191,
+			zerothvertpos = { 196, 352, -100 },
+		},
 	},
-	-- magic = {
-	--     vertcount = 690,
-	--     zerothvertpos = { -196, 656, -240 }
-	-- },
 	magic = {
-		vertcount = 7017,
-		zerothvertpos = { -203, 412, -164 },
+		{
+			vertcount = 7017,
+			zerothvertpos = { -203, 412, -164 },
+		},
 	},
 	construction = {
-		vertcount = 3972,
-		zerothvertpos = { 208, 580, -468 },
+		{
+			vertcount = 3972,
+			zerothvertpos = { 208, 580, -468 },
+		},
+		{
+			vertcount = 3636,
+			zerothvertpos = { 196, 352, -100 },
+		},
 	},
+	-- Model of the runes on the door
 	runecrafting = {
-		vertcount = 936,
-		zerothvertpos = { -256, 780, -56 },
+		{
+			vertcount = 936,
+			zerothvertpos = { -256, 780, -56 },
+		},
 	},
 	crafting = {
-		vertcount = 6342,
-		zerothvertpos = { 208, 408, -132 },
+		{
+			vertcount = 6342,
+			zerothvertpos = { 208, 408, -132 },
+		},
+		{
+			vertcount = 6147,
+			zerothvertpos = { 208, 244, -132 },
+		},
+		{
+			vertcount = 6153,
+			zerothvertpos = { 76, 0, 72 },
+		},
 	},
 	smithing = {
-		vertcount = 4581,
-		zerothvertpos = { 208, 508, 116 },
+		{
+			vertcount = 4581,
+			zerothvertpos = { 208, 508, 116 },
+		},
+		{
+			vertcount = 4116,
+			zerothvertpos = { 160, 384, 40 },
+		},
 	},
+	-- Model of the blinking eyes
 	prayer = {
-		vertcount = 726,
-		zerothvertpos = { -104, 492, -164 },
+		{
+			vertcount = 690,
+			zerothvertpos = { -196, 656, -240 },
+		},
 	},
 	firemaking = {
-		vertcount = 3105,
-		zerothvertpos = { 182, 32, 16 },
+		{
+			vertcount = 3105,
+			zerothvertpos = { 128, 32, 16 },
+		},
+	},
+	mining = {
+		{
+			vertcount = 1038,
+			zerothvertpos = { 4, 232, -236 },
+		},
+	},
+	strength = {
+		{
+			vertcount = 4494,
+			zerothvertpos = { 208, 420, 32 }
+		},
+		{
+			vertcount = 3690,
+			zerothvertpos = { 196, 352, -100 }
+		},
+	},
+	summoning = {
+		{
+			vertcount = 4794,
+			zerothvertpos = { -24, 248, -36 },
+		},
+	},
+	thieving = {
+		{
+			vertcount = 5265,
+			zerothvertpos = { 208, 420, 32 }
+		},
+		{
+			vertcount = 4611,
+			zerothvertpos = { 176, 588, -196 }
+		}
+	},
+	divination = {
+		{
+			vertcount = 207,
+			zerothvertpos = { 277, 205, -39 },
+		},
+		{
+			vertcount = 207,
+			zerothvertpos = { 235, 205, -39 },
+		},
+	},
+	agility = {
+		{
+			vertcount = 4665,
+			zerothvertpos = { 208, 420, 32 },
+		},
+		{
+			vertcount = 4593,
+			zerothvertpos = { 196, 352, -100 },
+		},
+	},
+	-- Model of the potions on the door
+	herblore = {
+		{
+			vertcount = 6672,
+			zerothvertpos = { 252, 380, 0 },
+		},
+		{
+			vertcount = 6630,
+			zerothvertpos = { 220, 364, -4 },
+		},
+	},
+	-- Model of the vines in front of the door
+	farming = {
+		{
+			vertcount = 1944,
+			zerothvertpos = { -224, 332, -60 },
+		}
+	},
+	guardian = {
+		{
+			vertcount = 4185,
+			zerothvertpos = { 208, 420, 32 },
+		},
+		{
+			vertcount = 4155,
+			zerothvertpos = { 196, 352, -100 },
+		},
+		{
+			vertcount = 4155,
+			zerothvertpos = { 196, 719, -100 }
+		}
+	},
+}
+
+local grouprooms = {
+	emote = {
+		vertcount = 3180,
+		zerothvertpos = { 0, 728, -44 }
+	}
+}
+
+local pondsakter = {
+	regular = {
+		vertcount = 2946,
+		zerothvertpos = { 20, 212, -120 }
+	},
+	withkey = {
+		vertcount = 3432,
+		zerothvertpos = { -29, 115, -132 }
 	},
 }
 
@@ -146,14 +286,30 @@ local gatestones = {
 		vertcount = 585,
 		zerothvertpos = { 40, 76, 36 },
 		zerothvertcolourrange = {
-			r = { 72, 75 },
+			r = { 72, 76 },
 			g = { 115, 118 },
 			b = { 102, 105 },
 		},
 	},
+	gatestone2 = {
+		vertcount = 585,
+		zerothvertpos = { 40, 76, 36 },
+		zerothvertcolourrange = {
+			r = { 104, 104 },
+			g = { 36, 36 },
+			b = { 32, 32 },
+		},
+	},
+}
+
+local page = {
+	vertcount = 24,
+	zerothvertpos = { 67, 23, -47 }
 }
 
 return {
 	keydoors = keydoors,
 	gatestones = gatestones,
+	skilldoors = skilldoors,
+	page = page
 }

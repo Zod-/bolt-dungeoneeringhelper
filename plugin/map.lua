@@ -47,10 +47,52 @@ local function findcolour(event)
 	end
 end
 
+local function findkeytype(event)
+	local keyshape = nil
+	local keycolour = nil
+
+	local vertexcount = event:vertexcount()
+	local mx, my, mz = event:vertexpoint(1):get()
+	local vertpos = { mx, my, mz }
+
+	-- Finding the key shape
+	for shape, data in pairs(icons.keys.shapes) do
+		if vertexcount == data.vertcount and compare(vertpos, data.zerothvertpos) then
+			keyshape = shape
+			break
+		end
+	end
+
+	if keyshape == nil then
+		return nil
+	end
+
+	local r, g, b, _ = event:vertexcolour(icons.keys.shapes[keyshape].vertindex + 1)
+	local vertexcolour = {
+		r = math.floor(r * 255 + 0.5),
+		g = math.floor(g * 255 + 0.5),
+		b = math.floor(b * 255 + 0.5),
+	}
+
+	-- Finding the key colour
+	for colour, data in pairs(icons.keys.colours) do
+		if helpers.iscolourinrange(vertexcolour, data.colourrange) then
+			keycolour = colour
+			break
+		end
+	end
+
+	if keycolour == nil then
+		return nil
+	end
+
+	return keycolour .. keyshape
+end
+
 --- Find the type of door for the given event (if any)
 --- @param event any The event to be checked for a door type
 --- @return { colour: string, shape: string }
-local function finddoortype(event)
+local function findkeydoortype(event)
 	local vertexcount = event:vertexcount()
 	local mx, my, mz = event:vertexpoint(1):get()
 	local zerothvertpos = { mx, my, mz }
@@ -65,6 +107,23 @@ local function finddoortype(event)
 	end
 
 	return { colour = colour, shape = keyshape }
+end
+
+local function findskilldoortype(event)
+	local vertexcount = event:vertexcount()
+	local mx, my, mz = event:vertexpoint(1):get()
+	local zerothvertpos = { mx, my, mz }
+
+	for skill, models in pairs(models.skilldoors) do
+		for i = 1, #models do
+			local data = models[i]
+			if vertexcount == data.vertcount and compare(zerothvertpos, data.zerothvertpos) then
+				return skill
+			end
+		end
+	end
+
+	return nil
 end
 
 local function getDirection(originx, originz, targetx, targetz)
@@ -132,6 +191,8 @@ function Map:update(event)
 		local roomdetails = textures.dungeonmap.rooms[texturedata]
 		if roomdetails and self.rooms[mapx][mapy].roomshape ~= roomdetails.roomshape then
 			self.rooms[mapx][mapy].roomshape = roomdetails.roomshape
+			self.rooms[mapx][mapy].key = nil
+			self.rooms[mapx][mapy].skill = nil
 			updatedshape = true
 
 			log("Room " .. mapx .. ", " .. mapy .. " updated to " .. roomdetails.roomshape)
@@ -157,7 +218,10 @@ end
 
 function Map:update3d(event)
 	local keysupdated = false
+	local floorkeysupdated = false
+	local pagesupdated = false
 	local gatestoneupdated = false
+	local skilldoorsupdated = false
 
 	-- Don't start attempting to look for 3d updates until we've found the base tile
 	if self.basetile.x == -1 or self.basetile.z == -1 then
@@ -168,9 +232,12 @@ function Map:update3d(event)
 		keysupdated = self:setRoomKeys(event)
 	else
 		gatestoneupdated = self:setGatestone(event)
+		floorkeysupdated = self:setKeysOnFloor(event)
+		pagesupdated = self:setPages(event)
 	end
+	skilldoorsupdated = self:setSkillDoors(event)
 
-	return keysupdated or gatestoneupdated
+	return keysupdated or gatestoneupdated or floorkeysupdated or skilldoorsupdated or pagesupdated
 end
 
 function Map:updateicon(event)
@@ -188,6 +255,12 @@ end
 function Map:setHeldKeys(event, modelnumber)
 	local keyshape
 	local keycolour
+
+	local _, _, width, height = event:xywh()
+	-- Ignore keys in the area loot menu which can contain the same key icon but at 36x32
+	if width ~= 18 and height ~= 16 then
+		return
+	end
 
 	local mx, my, mz = event:modelvertexpoint(modelnumber, 1):get()
 	local vertpos = { mx, my, mz }
@@ -230,14 +303,14 @@ function Map:setHeldKeys(event, modelnumber)
 	end
 
 	table.insert(self.heldkeys, key)
-
 	log("Picked up key: " .. key)
+	self:clearFloorKeys(key)
 
 	return true
 end
 
 function Map:setRoomKeys(event)
-	local doortype = finddoortype(event)
+	local doortype = findkeydoortype(event)
 
 	if doortype.colour == nil or doortype.shape == nil then
 		return false
@@ -262,6 +335,92 @@ function Map:setRoomKeys(event)
 
 		log("Found room locked by " .. key .. " at " .. lockedroomcoords.x .. ", " .. lockedroomcoords.y)
 
+		return true
+	end
+
+	return false
+end
+
+function Map:setSkillDoors(event)
+	local skill = findskilldoortype(event)
+
+	if skill == nil then
+		return false
+	end
+
+	local modelpoint = event:vertexpoint(1)
+	local worldpoint = modelpoint:transform(event:modelmatrix())
+	local x, _, z = worldpoint:get()
+	x = math.floor(x / 512)
+	z = math.floor(z / 512)
+
+	local roomcoords = self:getRoom(x, z)
+	local roomcentercoords = self:getRoomCenter(roomcoords.x, roomcoords.y)
+
+	local doordirectionfromcenter = getDirection(roomcentercoords.x, roomcentercoords.z, x, z)
+	local lockedroomcoords =
+		{ x = roomcoords.x + doordirectionfromcenter.x, y = roomcoords.y + doordirectionfromcenter.y }
+	local room = self.rooms[lockedroomcoords.x][lockedroomcoords.y]
+	if room.roomshape ~= nil and room.roomshape:sub(1, 1) == "l" and room.skill ~= skill then
+		room.skill = skill
+
+		log("Found room locked by " .. skill .. " at " .. lockedroomcoords.x .. ", " .. lockedroomcoords.y)
+
+		return true
+	end
+
+	return false
+end
+
+function Map:setKeysOnFloor(event)
+	local key = findkeytype(event)
+
+	if key == nil then
+		return false
+	end
+
+	local modelpoint = event:vertexpoint(1)
+	local worldpoint = modelpoint:transform(event:modelmatrix())
+	local x, _, z = worldpoint:get()
+	x = math.floor(x / 512)
+	z = math.floor(z / 512)
+
+	local roomcoords = self:getRoom(x, z)
+
+	if self.rooms[roomcoords.x][roomcoords.y]["key"] ~= key then
+		self.rooms[roomcoords.x][roomcoords.y]["key"] = key
+
+		log("Found key " .. key .. " at " .. roomcoords.x .. ", " .. roomcoords.y)
+
+		return true
+	end
+
+	return false
+end
+
+function Map:setPages(event)
+	local vertexcount = event:vertexcount()
+	local mx, my, mz = event:vertexpoint(1):get()
+	local vertpos = { mx, my, mz }
+
+	if vertexcount ~= models.page.vertcount or not compare(vertpos, models.page.zerothvertpos) then
+		return false
+	end
+
+	local modelpoint = event:vertexpoint(1)
+	local worldpoint = modelpoint:transform(event:modelmatrix())
+	local x, _, z = worldpoint:get()
+	x = math.floor(x / 512)
+	z = math.floor(z / 512)
+
+	local roomcoords = self:getRoom(x, z)
+
+	if self.rooms[roomcoords.x][roomcoords.y]["page"] ~= true then
+		self.rooms[roomcoords.x][roomcoords.y]["page"] = true
+
+		-- TODO: How to unset? Maybe clear all pages when we get this chat message?
+		-- "You pick up the strange note. Unable to decipher its contents you place it within your elven journal"
+		log("Found page at " .. roomcoords.x .. ", " .. roomcoords.y)
 		return true
 	end
 
@@ -308,6 +467,17 @@ function Map:setGatestone(event)
 	end
 
 	return false
+end
+function Map:clearFloorKeys(key)
+	for x = 1, #self.rooms do
+		for y = 1, #self.rooms[x] do
+			local roomshape = self.rooms[x][y].roomshape
+			local roomkey = self.rooms[x][y].key
+			if roomshape ~= nil and roomshape:sub(1, 1) == "o" and roomkey == key then
+				self.rooms[x][y].key = nil
+			end
+		end
+	end
 end
 
 function Map:clearGatestone(gatestone)
